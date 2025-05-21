@@ -1,0 +1,6 @@
+Name: ServiceNow Director Import
+Module: servicenowimport
+Version: 0.1.0
+Depends: director (>=1.10.4)
+Description: Director Import Source for ServiceNow
+ This module can fetch data from ServiceNow and import it into Director
