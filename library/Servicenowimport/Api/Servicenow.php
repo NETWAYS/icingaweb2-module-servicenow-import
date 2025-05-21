@@ -5,6 +5,9 @@ namespace Icinga\Module\Servicenowimport\Api;
 use GuzzleHttp\Client;
 use RuntimeException;
 
+/*
+ * ServiceNow API Client
+ */
 class Servicenow
 {
     protected $client = null;

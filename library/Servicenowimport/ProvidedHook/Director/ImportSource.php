@@ -27,7 +27,9 @@ class ImportSource extends ImportSourceHook
     public static function addSettingsFormFields(QuickForm $form)
     {
         $form->addElement(
-            'text', 'servicenow_url', [
+            'text',
+            'servicenow_url',
+            [
             'label' => 'ServiceNow API URL',
             'required' => true,
             'description' => 'ServiceNow API URL. Full-qualified URL including protocol and domain (e.g. https://example.service-now.com)',
@@ -35,7 +37,9 @@ class ImportSource extends ImportSourceHook
         );
 
         $form->addElement(
-            'text', 'servicenow_endpoint', [
+            'text',
+            'servicenow_endpoint',
+            [
             'label' => 'ServiceNow CMDB Table Endpoint',
             'required' => true,
             'description' => 'API endpoint to fetch objects from (e.g.: api/now/table/cmdb_ci_computer)',
@@ -43,7 +47,9 @@ class ImportSource extends ImportSourceHook
         );
 
         $form->addElement(
-            'text', 'servicenow_username', [
+            'text',
+            'servicenow_username',
+            [
             'label' => 'ServiceNow API Username',
             'required' => true,
             'description' => 'Username to authenticate at the ServiceNow API',
@@ -51,7 +57,9 @@ class ImportSource extends ImportSourceHook
         );
 
         $form->addElement(
-            'password', 'servicenow_password', [
+            'password',
+            'servicenow_password',
+            [
             'label' => 'ServiceNow API Password',
             'required' => true,
             'renderPassword' => true,
@@ -60,7 +68,9 @@ class ImportSource extends ImportSourceHook
         );
 
         $form->addElement(
-            'text', 'servicenow_timeout', [
+            'text',
+            'servicenow_timeout',
+            [
             'label' => 'ServiceNow API Timeout',
             'required' => false,
             'description' => 'Timeout (given in seconds) used to query data from Servicenow. Default is 20.',
@@ -68,7 +78,9 @@ class ImportSource extends ImportSourceHook
         );
 
         $form->addElement(
-            'text', 'servicenow_columns', [
+            'text',
+            'servicenow_columns',
+            [
             'label' => 'ServiceNow Columns',
             'required' => false,
             'description' => 'Comma separated list of columns to fetch. Leave empty to fetch all columns.',
@@ -76,7 +88,9 @@ class ImportSource extends ImportSourceHook
         );
 
         $form->addElement(
-            'text', 'servicenow_query', [
+            'text',
+            'servicenow_query',
+            [
             'label' => 'ServiceNow Query',
             'required' => false,
             'description' => 'Query to filter records. Leave empty to fetch all records. '
@@ -153,7 +167,8 @@ class ImportSource extends ImportSourceHook
         );
 
         $result = $client->request(
-            $endpoint, [
+            $endpoint,
+            [
             'query' => [
                 'sysparm_fields' => $columns,
                 'sysparm_query' => rawurldecode($query),
