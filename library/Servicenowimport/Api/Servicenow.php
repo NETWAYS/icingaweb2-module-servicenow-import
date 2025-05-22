@@ -37,8 +37,6 @@ class Servicenow
      */
     public function request(string $endpoint, array $params = [], string $method = "GET")
     {
-        var_dump($params);
-
         try {
             $response = $this->client->request($method, $endpoint, $params);
             return $response->getBody()->getContents();
