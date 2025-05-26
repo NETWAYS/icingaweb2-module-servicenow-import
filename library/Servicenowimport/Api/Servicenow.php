@@ -16,14 +16,14 @@ class Servicenow
     {
         $this->client = new Client(
             [
-            'base_uri' => $baseUri,
-            'auth' => [$username, $password],
-            'timeout' => $timeout,
-            'verify' => $tlsVerify,
-            'headers' => [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-            ],
+                'base_uri' => $baseUri,
+                'auth' => [$username, $password],
+                'timeout' => $timeout,
+                'verify' => $tlsVerify,
+                'headers' => [
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ],
             ]
         );
     }
