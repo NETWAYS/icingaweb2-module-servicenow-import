@@ -2,9 +2,7 @@
 <ruleset name="PHP_CodeSniffer">
     <description>Sniff our code a while</description>
 
-    <file>configuration.php</file>
     <file>run.php</file>
-    <file>application/</file>
     <file>library/</file>
 
     <exclude-pattern>vendor/*</exclude-pattern>
