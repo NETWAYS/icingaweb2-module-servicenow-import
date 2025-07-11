@@ -16,7 +16,7 @@ An official list of available tables can be found [here](https://www.servicenow.
 Since we wanted to make it as customizable as possible, we don't have a hard-coded API method. Therefore, you have to provide the full endpoint for the table here (e.g. `api/now/table/cmdb_ci_server`).
 
 **ServiceNow API Username:** User to authenticate against the ServiceNow API.
-
+Currently only Basic Auth is supported, meaning you would use the same credentials as you do to login into the UI.
 This user needs to have read access to the table you want to import.
 
 **ServiceNow API Password:** Password to authenticate against the ServiceNow API.
