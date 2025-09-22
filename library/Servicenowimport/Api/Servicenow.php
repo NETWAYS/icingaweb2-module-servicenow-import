@@ -12,7 +12,7 @@ class Servicenow
 {
     protected $client = null;
 
-    public function __construct(string $baseUri, string $username, string $password, bool $tlsVerify = true, int $timeout = 10)
+    public function __construct(string $baseUri, string $username, string $password, string $apikey, bool $tlsVerify = true, int $timeout = 10)
     {
         $this->client = new Client(
             [
@@ -21,6 +21,7 @@ class Servicenow
                 'timeout' => $timeout,
                 'verify' => $tlsVerify,
                 'headers' => [
+                    'x-sn-apikey' => $apikey,
                     'Accept' => 'application/json',
                     'Content-Type' => 'application/json',
                 ],

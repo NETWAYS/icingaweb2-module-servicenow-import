@@ -45,28 +45,59 @@ class ImportSource extends ImportSourceHook
                 'description' => 'API endpoint to fetch objects from (e.g.: api/now/table/cmdb_ci_computer)',
             ]
         );
-
         $form->addElement(
-            'text',
-            'servicenow_username',
+            'select',
+            'servicenow_authmethod',
             [
-                'label' => 'ServiceNow API Username',
+                'label' => 'ServiceNow API Auth-Method',
                 'required' => true,
-                'description' => 'Username to authenticate at the ServiceNow API',
+                'multiOptions' => [
+                    'basic' => ('Username & Password'),
+                    'apikey' => 'API-Key',
+		],
+		'class' => 'autosubmit',
+                'description' => 'Auth Method to authenticate at the ServiceNOW API (Basic Auth or Token-based Auth',
             ]
-        );
+	    );
 
-        $form->addElement(
-            'password',
-            'servicenow_password',
-            [
-                'label' => 'ServiceNow API Password',
-                'required' => true,
-                'renderPassword' => true,
-                'description' => 'Password to authenticate at the ServiceNow API',
-            ]
-        );
+	    $snowAuthmethod = $form->getSentOrObjectSetting('servicenow_authmethod');
 
+	    if($snowAuthmethod) {
+	        if ($snowAuthmethod === 'basic') {
+	            $form->addElement(
+                    'text',
+                    'servicenow_username',
+                    [
+                        'label' => 'ServiceNow API Username',
+                        'required' => true,
+                        'description' => 'Username to authenticate at the ServiceNow API',
+                    ]
+                );
+    
+                $form->addElement(
+                    'password',
+                    'servicenow_password',
+                    [
+                        'label' => 'ServiceNow API Password',
+                        'required' => true,
+                        'renderPassword' => true,
+                        'description' => 'Password to authenticate at the ServiceNow API',
+                    ]
+                );    
+	        } elseif ($snowAuthmethod === 'apikey') {
+                $form->addElement(
+                        'password',
+                        'servicenow_apikey',
+                        [
+                            'label' => 'ServiceNow API Key',
+                            'required' => true,
+                            'renderPassword' => true,
+                            'description' => 'API-Key to authenticate at the ServiceNow API',
+	    	        ]
+	            );
+            }
+        }
+    
         $form->addElement(
             'text',
             'servicenow_timeout',
@@ -162,6 +193,7 @@ class ImportSource extends ImportSourceHook
             $this->getSetting('servicenow_url'),
             $this->getSetting('servicenow_username'),
             $this->getSetting('servicenow_password'),
+            $this->getSetting('servicenow_apikey'),
             self::CLIENT_TLS_VERIFY,
             $this->getSetting('servicenow_timeout') ?: self::CLIENT_TIMEOUT,
         );

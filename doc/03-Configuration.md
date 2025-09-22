@@ -15,11 +15,14 @@ Create a new Icinga Director Import Source and use "ServiceNow Table API" as the
 An official list of available tables can be found [here](https://www.servicenow.com/docs/bundle/yokohama-servicenow-platform/page/product/configuration-management/reference/cmdb-tables-details.html?state=seamless).
 Since we wanted to make it as customizable as possible, we don't have a hard-coded API method. Therefore, you have to provide the full endpoint for the table here (e.g. `api/now/table/cmdb_ci_server`).
 
+**Servicenow Auth Methos:** Allows you to chosse between basic auth and token based auth as described in https://www.servicenow.com/docs/bundle/zurich-platform-security/page/integrate/authentication/task/configure-api-key.html
+
 **ServiceNow API Username:** User to authenticate against the ServiceNow API.
-Currently only Basic Auth is supported to authenticate against ServiceNow.
 This user needs to have read access to the table you want to import.
 
 **ServiceNow API Password:** Password to authenticate against the ServiceNow API.
+
+**ServiceNow API Key:** API Key for token based auth
 
 **ServiceNow API Timeout:** Timeout for the API request in seconds. Default is `20` seconds.
 
