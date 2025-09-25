@@ -19,6 +19,47 @@ class ImportSource extends ImportSourceHook
         return "ServiceNow Table API";
     }
 
+    protected static function addAuthOptions(QuickForm $form)
+    {
+        $method = $form->getSentOrObjectSetting('servicenow_authmethod');
+
+        if ($method === 'BASIC') {
+            $form->addElement(
+                'text',
+                'servicenow_username',
+                [
+                    'label' => 'ServiceNow API username',
+                    'required' => true,
+                    'description' => 'Username to authenticate at the ServiceNow API',
+                ]
+            );
+
+            $form->addElement(
+                'password',
+                'servicenow_password',
+                [
+                    'label' => 'ServiceNow API password',
+                    'required' => true,
+                    'renderPassword' => true,
+                    'description' => 'Password to authenticate at the ServiceNow API',
+                ]
+            );
+        }
+
+        if ($method === 'BEARER') {
+            $form->addElement(
+                'password',
+                'servicenow_token',
+                [
+                    'label' => 'ServiceNow API token',
+                    'required' => true,
+                    'renderPassword' => true,
+                    'description' => 'Token to authenticate at the ServiceNow API',
+                ]
+            );
+        }
+    }
+
     /**
      * @param  QuickForm $form
      * @return void
@@ -40,38 +81,34 @@ class ImportSource extends ImportSourceHook
             'text',
             'servicenow_endpoint',
             [
-                'label' => 'ServiceNow CMDB Table Endpoint',
+                'label' => 'ServiceNow CMDB table endpoint',
                 'required' => true,
                 'description' => 'API endpoint to fetch objects from (e.g.: api/now/table/cmdb_ci_computer)',
             ]
         );
 
         $form->addElement(
-            'text',
-            'servicenow_username',
+            'select',
+            'servicenow_authmethod',
             [
-                'label' => 'ServiceNow API Username',
+                'label' => 'ServiceNow API authentification method',
+                'description' => 'Authentification method for the ServiceNow API',
+                'multiOptions' => [
+                    'BASIC' => 'Basic Auth',
+                    'BEARER' => 'API Token',
+                ],
+                'class' => 'autosubmit',
                 'required' => true,
-                'description' => 'Username to authenticate at the ServiceNow API',
             ]
         );
 
-        $form->addElement(
-            'password',
-            'servicenow_password',
-            [
-                'label' => 'ServiceNow API Password',
-                'required' => true,
-                'renderPassword' => true,
-                'description' => 'Password to authenticate at the ServiceNow API',
-            ]
-        );
+        static::addAuthOptions($form);
 
         $form->addElement(
             'text',
             'servicenow_timeout',
             [
-                'label' => 'ServiceNow API Timeout',
+                'label' => 'ServiceNow API timeout',
                 'required' => false,
                 'description' => 'Timeout in seconds used to query data from ServiceNow. Default is 20.',
             ]
@@ -81,7 +118,7 @@ class ImportSource extends ImportSourceHook
             'text',
             'servicenow_columns',
             [
-                'label' => 'ServiceNow Columns',
+                'label' => 'ServiceNow columns',
                 'required' => false,
                 'description' => 'Comma separated list of columns to fetch. Leave empty to fetch all columns.',
             ]
@@ -91,7 +128,7 @@ class ImportSource extends ImportSourceHook
             'text',
             'servicenow_query',
             [
-                'label' => 'ServiceNow Query',
+                'label' => 'ServiceNow query',
                 'required' => false,
                 'description' => 'Query to filter records. Leave empty to fetch all records. '
                     . 'The query filter follows the official query syntax from ServiceNow: '
@@ -158,12 +195,19 @@ class ImportSource extends ImportSourceHook
         // Set endpoint
         $endpoint = sprintf('%s?sysparm_display_value=true', $this->getSetting('servicenow_endpoint'));
 
+
+        $auth = [
+            'method' => $this->getSetting('servicenow_authmethod'),
+            'token' => $this->getSetting('servicenow_token'),
+            'username' => $this->getSetting('servicenow_username'),
+            'password' => $this->getSetting('servicenow_password'),
+        ];
+
         $client = new Servicenow(
             $this->getSetting('servicenow_url'),
-            $this->getSetting('servicenow_username'),
-            $this->getSetting('servicenow_password'),
             self::CLIENT_TLS_VERIFY,
             $this->getSetting('servicenow_timeout') ?: self::CLIENT_TIMEOUT,
+            $auth
         );
 
         $result = $client->request(
