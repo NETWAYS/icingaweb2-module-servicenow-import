@@ -15,12 +15,6 @@ Create a new Icinga Director Import Source and use "ServiceNow Table API" as the
 An official list of available tables can be found [here](https://www.servicenow.com/docs/bundle/yokohama-servicenow-platform/page/product/configuration-management/reference/cmdb-tables-details.html?state=seamless).
 Since we wanted to make it as customizable as possible, we don't have a hard-coded API method. Therefore, you have to provide the full endpoint for the table here (e.g. `api/now/table/cmdb_ci_server`).
 
-**ServiceNow API Username:** User to authenticate against the ServiceNow API.
-Currently only Basic Auth is supported to authenticate against ServiceNow.
-This user needs to have read access to the table you want to import.
-
-**ServiceNow API Password:** Password to authenticate against the ServiceNow API.
-
 **ServiceNow API Timeout:** Timeout for the API request in seconds. Default is `20` seconds.
 
 **ServiceNow Columns:** List of columns to fetch.
@@ -32,3 +26,19 @@ Per default, we fetch all available columns. In case you want to limit the colum
 Per default, no filter limitation is applied to the query. The whole table will be fetched. In case you want to limit the objects, you can provide a filter query here.
 
 To filter, you will need to follow the [official filter syntax from ServiceNow](https://www.servicenow.com/docs/bundle/yokohama-platform-user-interface/page/use/using-lists/concept/c_EncodedQueryStrings.html) An example could be `nameSTARTSWITHlnux`.
+
+### Authentification methods
+
+Currently supported authentification methods:
+
+HTTP Basic Auth:
+
+**ServiceNow API Username:** User to authenticate against the ServiceNow API.
+
+This user needs to have read access to the table you want to import.
+
+**ServiceNow API Password:** Password to authenticate against the ServiceNow API.
+
+API Token:
+
+**ServiceNow API Token:** Bearer token to authenticate against the ServiceNow API. Used in the header key `x-sn-apikey`.
