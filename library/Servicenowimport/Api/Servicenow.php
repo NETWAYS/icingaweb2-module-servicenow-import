@@ -31,7 +31,7 @@ class Servicenow
         ];
 
         $method = $auth['method'] ?? 'UNKNOWN';
-        $proxy_type = $auth['proxy_type'] ?? 'UNKNOWN';
+        $proxyType = $auth['proxy_type'] ?? 'UNKNOWN';
 
         try {
             if ($method === 'BASIC') {
@@ -46,22 +46,21 @@ class Servicenow
         }
 
         try {
-            $proxy_http_scheme = parse_url($auth['proxy_address'], PHP_URL_SCHEME);
-            $proxy_host = parse_url($auth['proxy_address'], PHP_URL_HOST);
-            $port = parse_url($auth['proxy_address'], PHP_URL_PORT) ?? null;
-            if ($proxy_http_scheme === 'http') {
-                $port = 443;
-                if ($proxy_http_scheme === 'http') {
-                    $port = 80;
-                }
-                $c['proxy'] = sprintf('%s://%s:%s@%s:%d', $proxy_http_scheme, $auth['proxy_user'], $auth['proxy_password'], $proxy_host, $port);
-            } elseif ($proxy_type === 'SOCKS5') {
-                $proxy_http_scheme = 'socks5';
-                if ($port === null) {
-                    $port = 1028;
-                }
+            $proxyAddress = parse_url($auth['proxy_address']);
+            $proxyHost = $proxyAddress['host'];
+            $proxyScheme = 'https';
+            $proxyPort = 443;
+
+            if ($proxyType === 'HTTP') {
+                $proxyScheme = $proxyAddress['scheme'] ?? 'https';
+                $defaultPort = $proxyScheme === 'http' ? 80 : 443;
+                $proxyPort = $proxyAddress['port'] ?? $defaultPort;
+            } elseif ($proxyType === 'SOCKS5') {
+                $proxyScheme = 'socks5';
+                $proxyPort = $proxyAddress['port'] ?? 1028;
             }
-            $c['proxy'] = sprintf('%s://%s:%s@%s:%d', $proxy_http_scheme, $auth['proxy_user'], $auth['proxy_password'], $proxy_host, $port);
+
+            $c['proxy'] = sprintf('%s://%s:%s@%s:%d', $proxyScheme, $auth['proxy_user'], $auth['proxy_password'], $proxyHost, $proxyPort);
         } catch (\Exception $e) {
             throw new RuntimeException(sprintf("Failed to set proxy method %s", $e->getMessage()));
         }
