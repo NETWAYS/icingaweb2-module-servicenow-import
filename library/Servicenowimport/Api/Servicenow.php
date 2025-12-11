@@ -31,6 +31,7 @@ class Servicenow
         ];
 
         $method = $auth['method'] ?? 'UNKNOWN';
+        $proxyType = $auth['proxy_type'] ?? 'UNKNOWN';
 
         try {
             if ($method === 'BASIC') {
@@ -42,6 +43,26 @@ class Servicenow
             }
         } catch (\Exception $e) {
             throw new RuntimeException(sprintf("Failed to set authentication method %s", $e->getMessage()));
+        }
+
+        try {
+            $proxyAddress = parse_url($auth['proxy_address']);
+            $proxyHost = $proxyAddress['host'];
+            $proxyScheme = 'https';
+            $proxyPort = 443;
+
+            if ($proxyType === 'HTTP') {
+                $proxyScheme = $proxyAddress['scheme'] ?? 'https';
+                $defaultPort = $proxyScheme === 'http' ? 80 : 443;
+                $proxyPort = $proxyAddress['port'] ?? $defaultPort;
+            } elseif ($proxyType === 'SOCKS5') {
+                $proxyScheme = 'socks5';
+                $proxyPort = $proxyAddress['port'] ?? 1028;
+            }
+
+            $c['proxy'] = sprintf('%s://%s:%s@%s:%d', $proxyScheme, $auth['proxy_user'], $auth['proxy_password'], $proxyHost, $proxyPort);
+        } catch (\Exception $e) {
+            throw new RuntimeException(sprintf("Failed to set proxy method %s", $e->getMessage()));
         }
 
         $this->client = new Client($c);
