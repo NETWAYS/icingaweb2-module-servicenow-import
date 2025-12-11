@@ -12,7 +12,7 @@ class ImportSource extends ImportSourceHook
     private $objectCache = null;
 
     const CLIENT_TIMEOUT = 20;
-    const CLIENT_TLS_VERIFY = true;
+    const CLIENT_TLS_VERIFY = false;
 
     public function getName()
     {
@@ -135,6 +135,8 @@ class ImportSource extends ImportSourceHook
                     . 'https://www.servicenow.com/docs/bundle/yokohama-platform-user-interface/page/use/using-lists/concept/c_EncodedQueryStrings.html',
             ]
         );
+
+        static::addProxy($form);
     }
 
     /**
@@ -201,6 +203,10 @@ class ImportSource extends ImportSourceHook
             'token' => $this->getSetting('servicenow_token'),
             'username' => $this->getSetting('servicenow_username'),
             'password' => $this->getSetting('servicenow_password'),
+            'proxy_type' => $this->getSetting('proxy_type'),
+            'proxy_address' => $this->getSetting('proxy'),
+            'proxy_user' => $this->getSetting('proxy_user'),
+            'proxy_password' => $this->getSetting('proxy_pass'),
         ];
 
         $client = new Servicenow(
@@ -220,6 +226,50 @@ class ImportSource extends ImportSourceHook
             ]
         );
 
+
+
         return json_decode($result)->result;
+    }
+
+    protected static function addProxy(QuickForm $form)
+    {
+        $form->addElement('select', 'proxy_type', [
+            'label' => $form->translate('Proxy'),
+            'description' => $form->translate(
+                'In case your API is only reachable through a proxy, please'
+                . ' choose it\'s protocol right here'
+            ),
+            'multiOptions' => $form->optionalEnum([
+                'HTTP'   => $form->translate('HTTP proxy'),
+                'SOCKS5' => $form->translate('SOCKS5 proxy'),
+            ]),
+            'class' => 'autosubmit'
+        ]);
+
+        $proxyType = $form->getSentOrObjectSetting('proxy_type');
+
+        if ($proxyType) {
+            $form->addElement('text', 'proxy', [
+                'label' => $form->translate('Proxy Address'),
+                'description' => $form->translate(
+                    'Hostname, IP or <host>:<port>'
+                ),
+                'required' => true,
+            ]);
+            if ($proxyType === 'HTTP') {
+                $form->addElement('text', 'proxy_user', [
+                    'label'       => $form->translate('Proxy Username'),
+                    'description' => $form->translate(
+                        'In case your proxy requires authentication, please'
+                        . ' configure this here'
+                    ),
+                ]);
+
+                $form->addElement('storedPassword', 'proxy_pass', [
+                    'label'    => $form->translate('Proxy Password'),
+                    'required' => strlen((string) $form->getSentOrObjectSetting('proxy_user')) > 0
+                ]);
+            }
+        }
     }
 }
