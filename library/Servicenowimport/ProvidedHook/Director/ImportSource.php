@@ -12,7 +12,7 @@ class ImportSource extends ImportSourceHook
     private $objectCache = null;
 
     const CLIENT_TIMEOUT = 20;
-    const CLIENT_TLS_VERIFY = false;
+    const CLIENT_TLS_VERIFY = true;
 
     public function getName()
     {
