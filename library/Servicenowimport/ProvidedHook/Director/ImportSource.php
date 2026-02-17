@@ -28,7 +28,7 @@ class ImportSource extends ImportSourceHook
                 'text',
                 'servicenow_username',
                 [
-                    'label' => 'ServiceNow API username',
+                    'label' => 'API username',
                     'required' => true,
                     'description' => 'Username to authenticate at the ServiceNow API',
                 ]
@@ -38,7 +38,7 @@ class ImportSource extends ImportSourceHook
                 'password',
                 'servicenow_password',
                 [
-                    'label' => 'ServiceNow API password',
+                    'label' => 'API password',
                     'required' => true,
                     'renderPassword' => true,
                     'description' => 'Password to authenticate at the ServiceNow API',
@@ -51,10 +51,43 @@ class ImportSource extends ImportSourceHook
                 'password',
                 'servicenow_token',
                 [
-                    'label' => 'ServiceNow API token',
+                    'label' => 'API token',
                     'required' => true,
                     'renderPassword' => true,
                     'description' => 'Token to authenticate at the ServiceNow API',
+                ]
+            );
+        }
+
+        if ($method === 'OAUTH') {
+            $form->addElement(
+                'text',
+                'servicenow_oauth_client_id',
+                [
+                    'label' => 'OAuth Client ID',
+                    'required' => true,
+                    'description' => 'Client ID for the credentials',
+                ]
+            );
+
+            $form->addElement(
+                'password',
+                'servicenow_oauth_client_secret',
+                [
+                    'label' => 'OAuth Client Secret',
+                    'required' => true,
+                    'renderPassword' => true,
+                    'description' => 'Credentials for the client ID',
+                ]
+            );
+
+            $form->addElement(
+                'text',
+                'servicenow_oauth_scope',
+                [
+                    'label' => 'OAuth scopes',
+                    'required' => false,
+                    'description' => 'Scopes for the access token',
                 ]
             );
         }
@@ -72,6 +105,7 @@ class ImportSource extends ImportSourceHook
             'servicenow_url',
             [
                 'label' => 'ServiceNow API URL',
+                'placeholder' => 'https://example.service-now.com',
                 'required' => true,
                 'description' => 'ServiceNow API URL. Full-qualified URL including protocol and domain (e.g. https://example.service-now.com)',
             ]
@@ -82,6 +116,7 @@ class ImportSource extends ImportSourceHook
             'servicenow_endpoint',
             [
                 'label' => 'ServiceNow CMDB table endpoint',
+                'placeholder' => 'api/now/table/cmdb_ci_computer',
                 'required' => true,
                 'description' => 'API endpoint to fetch objects from (e.g.: api/now/table/cmdb_ci_computer)',
             ]
@@ -91,11 +126,12 @@ class ImportSource extends ImportSourceHook
             'select',
             'servicenow_authmethod',
             [
-                'label' => 'ServiceNow API authentification method',
-                'description' => 'Authentification method for the ServiceNow API',
+                'label' => 'API authentication method',
+                'description' => 'Authentication method to use for the API',
                 'multiOptions' => [
                     'BASIC' => 'Basic Auth',
                     'BEARER' => 'API Token',
+                    'OAUTH' => 'ServiceNow OAuth2 Client Credentials',
                 ],
                 'class' => 'autosubmit',
                 'required' => true,
@@ -108,7 +144,8 @@ class ImportSource extends ImportSourceHook
             'text',
             'servicenow_timeout',
             [
-                'label' => 'ServiceNow API timeout',
+                'label' => 'API timeout',
+                'placeholder' => '20',
                 'required' => false,
                 'description' => 'Timeout in seconds used to query data from ServiceNow. Default is 20.',
             ]
@@ -119,6 +156,7 @@ class ImportSource extends ImportSourceHook
             'servicenow_columns',
             [
                 'label' => 'ServiceNow columns',
+                'placeholder' => 'name,ip_address',
                 'required' => false,
                 'description' => 'Comma separated list of columns to fetch. Leave empty to fetch all columns.',
             ]
@@ -197,12 +235,15 @@ class ImportSource extends ImportSourceHook
         // Set endpoint
         $endpoint = sprintf('%s?sysparm_display_value=true', $this->getSetting('servicenow_endpoint'));
 
-
         $auth = [
             'method' => $this->getSetting('servicenow_authmethod'),
             'token' => $this->getSetting('servicenow_token'),
             'username' => $this->getSetting('servicenow_username'),
             'password' => $this->getSetting('servicenow_password'),
+            'token_url' => $this->getSetting('servicenow_oauth_token_url'),
+            'client_id' => $this->getSetting('servicenow_oauth_client_id'),
+            'client_secret' => $this->getSetting('servicenow_oauth_client_secret'),
+            'scope' => $this->getSetting('servicenow_oauth_scope'),
             'proxy_type' => $this->getSetting('proxy_type'),
             'proxy_address' => $this->getSetting('proxy'),
             'proxy_user' => $this->getSetting('proxy_user'),
@@ -225,8 +266,6 @@ class ImportSource extends ImportSourceHook
                 ]
             ]
         );
-
-
 
         return json_decode($result)->result;
     }

@@ -27,18 +27,29 @@ Per default, no filter limitation is applied to the query. The whole table will 
 
 To filter, you will need to follow the [official filter syntax from ServiceNow](https://www.servicenow.com/docs/bundle/yokohama-platform-user-interface/page/use/using-lists/concept/c_EncodedQueryStrings.html) An example could be `nameSTARTSWITHlnux`.
 
-### Authentification methods
+### Authentication methods
 
-Currently supported authentification methods:
+Currently supported authentication methods:
 
 HTTP Basic Auth:
 
-**ServiceNow API Username:** User to authenticate against the ServiceNow API.
+- **ServiceNow API Username:** User to authenticate against the ServiceNow API.
 
 This user needs to have read access to the table you want to import.
 
-**ServiceNow API Password:** Password to authenticate against the ServiceNow API.
+- **ServiceNow API Password:** Password to authenticate against the ServiceNow API.
 
 API Token:
 
-**ServiceNow API Token:** Bearer token to authenticate against the ServiceNow API. Used in the header key `x-sn-apikey`.
+- **ServiceNow API Token:** Bearer token to authenticate against the ServiceNow API. Used in the header key `x-sn-apikey`.
+
+OAuth2 Client Credentials:
+
+- **ServiceNow Client ID:** ID for the credentials
+- **ServiceNow Client Secret:** Secret for the credentials
+- **ServiceNow Scopes:** Scopes for the access token
+
+This method uses the ServiceNow `/oauth_token.do` endpoint to request an access token.
+Currently, the access token is not stored during multiple requests.
+
+Note, this requires the System Property: `glide.oauth.inbound.client.credential.grant_type.enabled`
