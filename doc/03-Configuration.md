@@ -52,4 +52,9 @@ OAuth2 Client Credentials:
 This method uses the ServiceNow `/oauth_token.do` endpoint to request an access token.
 Currently, the access token is not stored during multiple requests.
 
+Regarding scopes, the provided credentials need access to the endpoints that you have configured.
+For example, when using the `/api/now/table` endpoint, the credentials need access to the "Table API".
+
+![Scopes Example](img/scopes.png)
+
 Note, this requires the System Property: `glide.oauth.inbound.client.credential.grant_type.enabled`
