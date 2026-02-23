@@ -1,6 +1,6 @@
 Name: ServiceNow Director Import
 Module: servicenowimport
-Version: 0.3.0
+Version: 0.4.0
 Depends: director (>=1.10.4)
 Description: Director Import Source for ServiceNow
  This module fetches data from the ServiceNow API for the Icinga Director import.
