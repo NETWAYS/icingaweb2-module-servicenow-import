@@ -2,17 +2,20 @@
 
 namespace Icinga\Module\Servicenowimport\ProvidedHook\Director;
 
-use GuzzleHttp\Exception\GuzzleException;
+use Icinga\Module\Servicenowimport\Api\Servicenow;
+
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
-use Icinga\Module\Servicenowimport\Api\Servicenow;
+use Icinga\Util\Json;
+
+use GuzzleHttp\Exception\GuzzleException;
 
 class ImportSource extends ImportSourceHook
 {
-    private $objectCache = null;
+    private ?array $objectCache = null;
 
-    const CLIENT_TIMEOUT = 20;
-    const CLIENT_TLS_VERIFY = true;
+    private const CLIENT_TIMEOUT = 20;
+    private const CLIENT_TLS_VERIFY = true;
 
     public function getName()
     {
@@ -233,7 +236,7 @@ class ImportSource extends ImportSourceHook
         }
 
         // Set endpoint
-        $endpoint = sprintf('%s?sysparm_display_value=true', $this->getSetting('servicenow_endpoint'));
+        $endpoint = $this->getSetting('servicenow_endpoint');
 
         $auth = [
             'method' => $this->getSetting('servicenow_authmethod'),
@@ -261,13 +264,35 @@ class ImportSource extends ImportSourceHook
             $endpoint,
             [
                 'query' => [
+                    'sysparm_display_value' => 'true',
                     'sysparm_fields' => $columns,
                     'sysparm_query' => rawurldecode($query),
                 ]
             ]
         );
 
-        return json_decode($result)->result;
+        $data = Json::decode($result, true);
+
+        $result = $this->extractDisplayValues($data['result'] ?? []);
+
+        return $result;
+    }
+
+    /*
+     * extractDisplayValues returns a copy of the given array but with
+     * the with display_value as the values instead of objects.
+     * We use sysparm_display_value the expand the ServiceNow objects.
+     * each object will have the actual value in the field display_value.
+     */
+    protected function extractDisplayValues(array $array): array
+    {
+        return array_map(function ($value) {
+            if (!is_array($value)) {
+                return $value;
+            }
+
+            return array_key_exists('display_value', $value) ? $value['display_value'] : $this->extractDisplayValues($value);
+        }, $array);
     }
 
     protected static function addProxy(QuickForm $form)
