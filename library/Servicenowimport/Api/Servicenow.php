@@ -2,6 +2,8 @@
 
 namespace Icinga\Module\Servicenowimport\Api;
 
+use Icinga\Util\Json;
+
 use GuzzleHttp\Client;
 use RuntimeException;
 
@@ -112,7 +114,7 @@ class Servicenow
 
         try {
             $response = $c->post('/oauth_token.do', ['form_params' => $params]);
-            $data = json_decode($response->getBody(), true);
+            $data = Json::decode($response->getBody(), true);
         } catch (\Exception $e) {
             throw new RuntimeException(sprintf("Request failed: %s", $e->getMessage()));
         }

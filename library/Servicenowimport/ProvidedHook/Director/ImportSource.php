@@ -2,17 +2,20 @@
 
 namespace Icinga\Module\Servicenowimport\ProvidedHook\Director;
 
-use GuzzleHttp\Exception\GuzzleException;
+use Icinga\Module\Servicenowimport\Api\Servicenow;
+
 use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
-use Icinga\Module\Servicenowimport\Api\Servicenow;
+use Icinga\Util\Json;
+
+use GuzzleHttp\Exception\GuzzleException;
 
 class ImportSource extends ImportSourceHook
 {
-    private $objectCache = null;
+    private ?array $objectCache = null;
 
-    const CLIENT_TIMEOUT = 20;
-    const CLIENT_TLS_VERIFY = true;
+    private const CLIENT_TIMEOUT = 20;
+    private const CLIENT_TLS_VERIFY = true;
 
     public function getName()
     {
@@ -268,7 +271,7 @@ class ImportSource extends ImportSourceHook
             ]
         );
 
-        $data = json_decode($result, true);
+        $data = Json::decode($result, true);
 
         $result = $this->extractDisplayValues($data['result'] ?? []);
 
