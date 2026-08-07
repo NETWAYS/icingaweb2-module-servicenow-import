@@ -21,6 +21,8 @@ Since we wanted to make it as customizable as possible, we don't have a hard-cod
 
 Per default, we fetch all available columns. In case you want to limit the columns, you can provide a comma separated list of columns here. (e.g. `name,ip_address`)
 
+Note, The query uses the `sysparm_display_value` to expand referenced objects so that they can be used in columns.
+
 **ServiceNow Query:** Filters for the query.
 
 Per default, no filter limitation is applied to the query. The whole table will be fetched. In case you want to limit the objects, you can provide a filter query here.
