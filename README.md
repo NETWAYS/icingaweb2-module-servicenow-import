@@ -7,7 +7,7 @@ The ServiceNow API is used to fetch objects.
 
 ## Installation Requirements
 
-* PHP Version >= 8.0
+* PHP Version >= 8.2
 * Icinga Director
 
 ## Documentation
