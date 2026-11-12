@@ -59,6 +59,10 @@ class Servicenow
                 // Support input with and without schema prefix
                 $proxyAddress = parse_url(strpos($rawProxy, '://') === false ? 'https://' . $rawProxy : $rawProxy);
 
+                if (! is_array($proxyAddress) || empty($proxyAddress['host'])) {
+                    throw new RuntimeException(sprintf('invalid proxy address "%s"', $rawProxy));
+                }
+
                 $proxyHost = $proxyAddress['host'];
                 $proxyScheme = 'https';
                 $proxyPort = 443;
