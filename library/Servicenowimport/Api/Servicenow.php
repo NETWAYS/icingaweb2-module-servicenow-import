@@ -33,7 +33,7 @@ class Servicenow
         ];
 
         $method = $auth['method'] ?? 'UNKNOWN';
-        $proxyType = $auth['proxy_type'] ?? 'UNKNOWN';
+        $proxyType = $auth['proxy_type'] ?? '';
 
         try {
             if ($method === 'BASIC') {
@@ -52,6 +52,8 @@ class Servicenow
         } catch (\Exception $e) {
             throw new RuntimeException(sprintf("Failed to set authentication method %s", $e->getMessage()));
         }
+
+        var_dump($proxyType);
 
         if ($proxyType !== '') {
             try {
