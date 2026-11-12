@@ -53,7 +53,7 @@ class Servicenow
             throw new RuntimeException(sprintf("Failed to set authentication method %s", $e->getMessage()));
         }
 
-        if ($proxyType !== '') {
+        if ($proxyType === 'HTTP' || $proxyType === 'SOCKS5') {
             try {
                 $rawProxy = $auth['proxy_address'];
                 // Support input with and without schema prefix
