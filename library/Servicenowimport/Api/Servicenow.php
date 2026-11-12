@@ -55,7 +55,10 @@ class Servicenow
 
         if ($proxyType !== '') {
             try {
-                $proxyAddress = parse_url($auth['proxy_address']);
+                $rawProxy = $auth['proxy_address'];
+                // Support input with and without schema prefix
+                $proxyAddress = parse_url(strpos($rawProxy, '://') === false ? 'https://' . $rawProxy : $rawProxy);
+
                 $proxyHost = $proxyAddress['host'];
                 $proxyScheme = 'https';
                 $proxyPort = 443;
