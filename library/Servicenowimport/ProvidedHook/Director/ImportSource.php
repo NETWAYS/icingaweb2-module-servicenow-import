@@ -260,7 +260,7 @@ class ImportSource extends ImportSourceHook
             $auth
         );
 
-        $result = $client->request(
+        $resp = $client->request(
             $endpoint,
             [
                 'query' => [
@@ -271,28 +271,20 @@ class ImportSource extends ImportSourceHook
             ]
         );
 
-        $data = Json::decode($result, true);
+        $data = Json::decode($resp);
 
-        $result = $this->extractDisplayValues($data['result'] ?? []);
-
-        return $result;
-    }
-
-    /*
-     * extractDisplayValues returns a copy of the given array but with
-     * the with display_value as the values instead of objects.
-     * We use sysparm_display_value the expand the ServiceNow objects.
-     * each object will have the actual value in the field display_value.
-     */
-    protected function extractDisplayValues(array $array): array
-    {
-        return array_map(function ($value) {
-            if (!is_array($value)) {
-                return $value;
+        // We use sysparm_display_value the expand the ServiceNow objects.
+        // each object will have the actual value in the field display_value.
+        // Note, we need to return an array of stdclass objects.
+        foreach ($data->result as $row) {
+            foreach (get_object_vars($row) as $key => $value) {
+                if (is_object($value) && property_exists($value, 'display_value')) {
+                    $row->$key = $value->display_value;
+                }
             }
+        }
 
-            return array_key_exists('display_value', $value) ? $value['display_value'] : $this->extractDisplayValues($value);
-        }, $array);
+        return $data->result;
     }
 
     protected static function addProxy(QuickForm $form)
