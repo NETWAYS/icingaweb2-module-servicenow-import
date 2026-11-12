@@ -53,8 +53,6 @@ class Servicenow
             throw new RuntimeException(sprintf("Failed to set authentication method %s", $e->getMessage()));
         }
 
-        var_dump($proxyType);
-
         if ($proxyType !== '') {
             try {
                 $rawProxy = $auth['proxy_address'];
