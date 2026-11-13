@@ -308,7 +308,7 @@ class ImportSource extends ImportSourceHook
             $form->addElement('text', 'proxy', [
                 'label' => $form->translate('Proxy Address'),
                 'description' => $form->translate(
-                    'Hostname, IP or <host>:<port>'
+                    'Hostname, IP or <host>:<port> - If no schema (http/https) is provided then https is used'
                 ),
                 'required' => true,
             ]);

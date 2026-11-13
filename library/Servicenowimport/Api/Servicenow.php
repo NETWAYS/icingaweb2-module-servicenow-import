@@ -33,7 +33,7 @@ class Servicenow
         ];
 
         $method = $auth['method'] ?? 'UNKNOWN';
-        $proxyType = $auth['proxy_type'] ?? 'UNKNOWN';
+        $proxyType = $auth['proxy_type'] ?? '';
 
         try {
             if ($method === 'BASIC') {
@@ -53,9 +53,16 @@ class Servicenow
             throw new RuntimeException(sprintf("Failed to set authentication method %s", $e->getMessage()));
         }
 
-        if ($proxyType !== '') {
+        if ($proxyType === 'HTTP' || $proxyType === 'SOCKS5') {
             try {
-                $proxyAddress = parse_url($auth['proxy_address']);
+                $rawProxy = $auth['proxy_address'];
+                // Support input with and without schema prefix
+                $proxyAddress = parse_url(strpos($rawProxy, '://') === false ? 'https://' . $rawProxy : $rawProxy);
+
+                if (! is_array($proxyAddress) || empty($proxyAddress['host'])) {
+                    throw new RuntimeException(sprintf('invalid proxy address "%s"', $rawProxy));
+                }
+
                 $proxyHost = $proxyAddress['host'];
                 $proxyScheme = 'https';
                 $proxyPort = 443;
