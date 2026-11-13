@@ -33,7 +33,6 @@ class Servicenow
         ];
 
         $method = $auth['method'] ?? 'UNKNOWN';
-        $proxyType = $auth['proxy_type'] ?? '';
 
         try {
             if ($method === 'BASIC') {
@@ -53,33 +52,10 @@ class Servicenow
             throw new RuntimeException(sprintf("Failed to set authentication method %s", $e->getMessage()));
         }
 
-        if ($proxyType === 'HTTP' || $proxyType === 'SOCKS5') {
-            try {
-                $rawProxy = $auth['proxy_address'];
-                // Support input with and without schema prefix
-                $proxyAddress = parse_url(strpos($rawProxy, '://') === false ? 'https://' . $rawProxy : $rawProxy);
+        $proxy = $this->buildProxyUrl($auth);
 
-                if (! is_array($proxyAddress) || empty($proxyAddress['host'])) {
-                    throw new RuntimeException(sprintf('invalid proxy address "%s"', $rawProxy));
-                }
-
-                $proxyHost = $proxyAddress['host'];
-                $proxyScheme = 'https';
-                $proxyPort = 443;
-
-                if ($proxyType === 'HTTP') {
-                    $proxyScheme = $proxyAddress['scheme'] ?? 'https';
-                    $defaultPort = $proxyScheme === 'http' ? 80 : 443;
-                    $proxyPort = $proxyAddress['port'] ?? $defaultPort;
-                } elseif ($proxyType === 'SOCKS5') {
-                    $proxyScheme = 'socks5';
-                    $proxyPort = $proxyAddress['port'] ?? 1028;
-                }
-
-                $c['proxy'] = sprintf('%s://%s:%s@%s:%d', $proxyScheme, $auth['proxy_user'], $auth['proxy_password'], $proxyHost, $proxyPort);
-            } catch (\Exception $e) {
-                throw new RuntimeException(sprintf("Failed to set proxy method %s", $e->getMessage()));
-            }
+        if ($proxy !== null) {
+            $c['proxy'] = $proxy;
         }
 
         $this->client = new Client($c);
@@ -99,6 +75,52 @@ class Servicenow
             return $response->getBody()->getContents();
         } catch (\Exception $e) {
             throw new RuntimeException(sprintf("Request failed: %s", $e->getMessage()));
+        }
+    }
+
+    /**
+     * buildProxyUrl returns a proxy URL or null if no proxy is configured.
+     */
+    private function buildProxyUrl(array $auth): ?string
+    {
+        $proxyType = $auth['proxy_type'] ?? '';
+
+        if ($proxyType !== 'HTTP' && $proxyType !== 'SOCKS5') {
+            return null;
+        }
+
+        try {
+            $rawProxy = (string) ($auth['proxy_address'] ?? '');
+            // Support input with and without schema prefix
+            $proxyAddress = parse_url(strpos($rawProxy, '://') === false ? 'https://' . $rawProxy : $rawProxy);
+
+            if (! is_array($proxyAddress) || empty($proxyAddress['host'])) {
+                throw new RuntimeException(sprintf('invalid proxy address "%s"', $rawProxy));
+            }
+
+            $proxyHost = $proxyAddress['host'];
+
+            if ($proxyType === 'HTTP') {
+                $proxyScheme = $proxyAddress['scheme'] ?? 'https';
+                $defaultPort = $proxyScheme === 'http' ? 80 : 443;
+                $proxyPort = $proxyAddress['port'] ?? $defaultPort;
+            } else {
+                // socks5h: let the proxy resolve DNS names
+                $proxyScheme = 'socks5h';
+                $proxyPort = $proxyAddress['port'] ?? 1080;
+            }
+
+            // Only add credentials if a user is set, and URL-encode them so special characters wont break the proxy URL
+            $userinfo = '';
+            if (isset($auth['proxy_user']) && $auth['proxy_user'] !== '') {
+                $userinfo = rawurlencode((string) $auth['proxy_user'])
+                    . ':' . rawurlencode((string) ($auth['proxy_password'] ?? ''))
+                    . '@';
+            }
+
+            return sprintf('%s://%s%s:%d', $proxyScheme, $userinfo, $proxyHost, $proxyPort);
+        } catch (\Exception $e) {
+            throw new RuntimeException(sprintf("Failed to set proxy method %s", $e->getMessage()));
         }
     }
 

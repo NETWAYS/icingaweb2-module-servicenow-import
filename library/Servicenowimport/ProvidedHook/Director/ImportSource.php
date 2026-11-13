@@ -260,10 +260,12 @@ class ImportSource extends ImportSourceHook
             $auth
         );
 
+        // TODO: Maybe use pagination here
         $resp = $client->request(
             $endpoint,
             [
                 'query' => [
+                    // Since we not only want the sys_ids but also the actual values
                     'sysparm_display_value' => 'true',
                     'sysparm_fields' => $columns,
                     'sysparm_query' => rawurldecode($query),
