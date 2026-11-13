@@ -168,6 +168,6 @@ class Servicenow
             return $data['access_token'];
         }
 
-        throw new RuntimeException(sprintf("No access token in response", $data));
+        throw new RuntimeException('No access token in response');
     }
 }
