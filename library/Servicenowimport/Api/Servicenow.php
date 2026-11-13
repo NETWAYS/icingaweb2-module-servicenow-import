@@ -12,7 +12,9 @@ use RuntimeException;
  */
 class Servicenow
 {
-    protected $client = null;
+    // Configuration for the HTTP client
+    protected array $baseOptions = [];
+    protected array $authOptions = [];
 
     // $auth = [
     //     'method' => 'BASIC',
@@ -22,16 +24,52 @@ class Servicenow
     // ];
     public function __construct(string $baseUri, bool $tlsVerify = true, int $timeout = 10, array $auth = [])
     {
-        $c = [
+        $this->baseOptions = [
             'base_uri' => $baseUri,
             'timeout' => $timeout,
             'verify' => $tlsVerify,
-            'headers' => [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-            ],
         ];
 
+        $this->authOptions = $auth;
+
+        $proxy = $this->buildProxyUrl($auth);
+
+        if ($proxy !== null) {
+            $this->baseOptions['proxy'] = $proxy;
+        }
+    }
+
+    /**
+     * @param  string $endpoint
+     * @param  array  $params
+     * @param  string $method
+     * @return mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function request(string $endpoint, array $params = [], string $method = "GET")
+    {
+        $client = $this->getClient();
+
+        try {
+            $response = $client->request($method, $endpoint, $params);
+            return $response->getBody()->getContents();
+        } catch (\Exception $e) {
+            throw new RuntimeException(sprintf("Request failed: %s", $e->getMessage()));
+        }
+    }
+
+    /**
+     * getClient returns a configured HTTP client for requests
+     */
+    private function getClient(): Client
+    {
+        $c = $this->baseOptions;
+        $c['headers'] = [
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+        ];
+
+        $auth = $this->authOptions;
         $method = $auth['method'] ?? 'UNKNOWN';
 
         try {
@@ -45,37 +83,14 @@ class Servicenow
 
             if ($method === 'OAUTH') {
                 // Note: We currently don't store the token between requests
-                $accessToken = $this->fetchAccessToken($baseUri, $auth);
+                $accessToken = $this->fetchAccessToken($auth);
                 $c['headers']['Authorization'] = 'Bearer ' . $accessToken;
             }
         } catch (\Exception $e) {
             throw new RuntimeException(sprintf("Failed to set authentication method %s", $e->getMessage()));
         }
 
-        $proxy = $this->buildProxyUrl($auth);
-
-        if ($proxy !== null) {
-            $c['proxy'] = $proxy;
-        }
-
-        $this->client = new Client($c);
-    }
-
-    /**
-     * @param  string $endpoint
-     * @param  array  $params
-     * @param  string $method
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
-     */
-    public function request(string $endpoint, array $params = [], string $method = "GET")
-    {
-        try {
-            $response = $this->client->request($method, $endpoint, $params);
-            return $response->getBody()->getContents();
-        } catch (\Exception $e) {
-            throw new RuntimeException(sprintf("Request failed: %s", $e->getMessage()));
-        }
+        return new Client($c);
     }
 
     /**
@@ -127,9 +142,10 @@ class Servicenow
     /**
      * fetchAccessToken gets a new access token from the authorization server.
      */
-    private function fetchAccessToken(string $baseUri, array $oauthConfig): string
+    private function fetchAccessToken(array $oauthConfig): string
     {
-        $c = new Client(['base_uri' => $baseUri]);
+        // HTTP Client with common options
+        $c = new Client($this->baseOptions);
 
         $params = [
             'grant_type' => 'client_credentials',
