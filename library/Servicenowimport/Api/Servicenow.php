@@ -12,7 +12,9 @@ use RuntimeException;
  */
 class Servicenow
 {
-    protected $client = null;
+    // Configuration for the HTTP client
+    protected array $baseOptions = [];
+    protected array $authOptions = [];
 
     // $auth = [
     //     'method' => 'BASIC',
@@ -22,18 +24,53 @@ class Servicenow
     // ];
     public function __construct(string $baseUri, bool $tlsVerify = true, int $timeout = 10, array $auth = [])
     {
-        $c = [
+        $this->baseOptions = [
             'base_uri' => $baseUri,
             'timeout' => $timeout,
             'verify' => $tlsVerify,
-            'headers' => [
-                'Accept' => 'application/json',
-                'Content-Type' => 'application/json',
-            ],
         ];
 
+        $this->authOptions = $auth;
+
+        $proxy = $this->buildProxyUrl($auth);
+
+        if ($proxy !== null) {
+            $this->baseOptions['proxy'] = $proxy;
+        }
+    }
+
+    /**
+     * @param  string $endpoint
+     * @param  array  $params
+     * @param  string $method
+     * @return mixed
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function request(string $endpoint, array $params = [], string $method = "GET")
+    {
+        $client = $this->getClient();
+
+        try {
+            $response = $client->request($method, $endpoint, $params);
+            return $response->getBody()->getContents();
+        } catch (\Exception $e) {
+            throw new RuntimeException(sprintf("Request failed: %s", $e->getMessage()));
+        }
+    }
+
+    /**
+     * getClient returns a configured HTTP client for requests
+     */
+    private function getClient(): Client
+    {
+        $c = $this->baseOptions;
+        $c['headers'] = [
+            'Accept' => 'application/json',
+            'Content-Type' => 'application/json',
+        ];
+
+        $auth = $this->authOptions;
         $method = $auth['method'] ?? 'UNKNOWN';
-        $proxyType = $auth['proxy_type'] ?? '';
 
         try {
             if ($method === 'BASIC') {
@@ -46,68 +83,69 @@ class Servicenow
 
             if ($method === 'OAUTH') {
                 // Note: We currently don't store the token between requests
-                $accessToken = $this->fetchAccessToken($baseUri, $auth);
+                $accessToken = $this->fetchAccessToken($auth);
                 $c['headers']['Authorization'] = 'Bearer ' . $accessToken;
             }
         } catch (\Exception $e) {
             throw new RuntimeException(sprintf("Failed to set authentication method %s", $e->getMessage()));
         }
 
-        if ($proxyType === 'HTTP' || $proxyType === 'SOCKS5') {
-            try {
-                $rawProxy = $auth['proxy_address'];
-                // Support input with and without schema prefix
-                $proxyAddress = parse_url(strpos($rawProxy, '://') === false ? 'https://' . $rawProxy : $rawProxy);
-
-                if (! is_array($proxyAddress) || empty($proxyAddress['host'])) {
-                    throw new RuntimeException(sprintf('invalid proxy address "%s"', $rawProxy));
-                }
-
-                $proxyHost = $proxyAddress['host'];
-                $proxyScheme = 'https';
-                $proxyPort = 443;
-
-                if ($proxyType === 'HTTP') {
-                    $proxyScheme = $proxyAddress['scheme'] ?? 'https';
-                    $defaultPort = $proxyScheme === 'http' ? 80 : 443;
-                    $proxyPort = $proxyAddress['port'] ?? $defaultPort;
-                } elseif ($proxyType === 'SOCKS5') {
-                    $proxyScheme = 'socks5';
-                    $proxyPort = $proxyAddress['port'] ?? 1028;
-                }
-
-                $c['proxy'] = sprintf('%s://%s:%s@%s:%d', $proxyScheme, $auth['proxy_user'], $auth['proxy_password'], $proxyHost, $proxyPort);
-            } catch (\Exception $e) {
-                throw new RuntimeException(sprintf("Failed to set proxy method %s", $e->getMessage()));
-            }
-        }
-
-        $this->client = new Client($c);
+        return new Client($c);
     }
 
     /**
-     * @param  string $endpoint
-     * @param  array  $params
-     * @param  string $method
-     * @return mixed
-     * @throws \GuzzleHttp\Exception\GuzzleException
+     * buildProxyUrl returns a proxy URL or null if no proxy is configured.
      */
-    public function request(string $endpoint, array $params = [], string $method = "GET")
+    private function buildProxyUrl(array $auth): ?string
     {
+        $proxyType = $auth['proxy_type'] ?? '';
+
+        if ($proxyType !== 'HTTP' && $proxyType !== 'SOCKS5') {
+            return null;
+        }
+
         try {
-            $response = $this->client->request($method, $endpoint, $params);
-            return $response->getBody()->getContents();
+            $rawProxy = (string) ($auth['proxy_address'] ?? '');
+            // Support input with and without schema prefix
+            $proxyAddress = parse_url(strpos($rawProxy, '://') === false ? 'https://' . $rawProxy : $rawProxy);
+
+            if (! is_array($proxyAddress) || empty($proxyAddress['host'])) {
+                throw new RuntimeException(sprintf('invalid proxy address "%s"', $rawProxy));
+            }
+
+            $proxyHost = $proxyAddress['host'];
+
+            if ($proxyType === 'HTTP') {
+                $proxyScheme = $proxyAddress['scheme'] ?? 'https';
+                $defaultPort = $proxyScheme === 'http' ? 80 : 443;
+                $proxyPort = $proxyAddress['port'] ?? $defaultPort;
+            } else {
+                // socks5h: let the proxy resolve DNS names
+                $proxyScheme = 'socks5h';
+                $proxyPort = $proxyAddress['port'] ?? 1080;
+            }
+
+            // Only add credentials if a user is set, and URL-encode them so special characters wont break the proxy URL
+            $userinfo = '';
+            if (isset($auth['proxy_user']) && $auth['proxy_user'] !== '') {
+                $userinfo = rawurlencode((string) $auth['proxy_user'])
+                    . ':' . rawurlencode((string) ($auth['proxy_password'] ?? ''))
+                    . '@';
+            }
+
+            return sprintf('%s://%s%s:%d', $proxyScheme, $userinfo, $proxyHost, $proxyPort);
         } catch (\Exception $e) {
-            throw new RuntimeException(sprintf("Request failed: %s", $e->getMessage()));
+            throw new RuntimeException(sprintf("Failed to set proxy method %s", $e->getMessage()));
         }
     }
 
     /**
      * fetchAccessToken gets a new access token from the authorization server.
      */
-    private function fetchAccessToken(string $baseUri, array $oauthConfig): string
+    private function fetchAccessToken(array $oauthConfig): string
     {
-        $c = new Client(['base_uri' => $baseUri]);
+        // HTTP Client with common options
+        $c = new Client($this->baseOptions);
 
         $params = [
             'grant_type' => 'client_credentials',
@@ -130,6 +168,6 @@ class Servicenow
             return $data['access_token'];
         }
 
-        throw new RuntimeException(sprintf("No access token in response", $data));
+        throw new RuntimeException('No access token in response');
     }
 }

@@ -8,8 +8,6 @@ use Icinga\Module\Director\Hook\ImportSourceHook;
 use Icinga\Module\Director\Web\Form\QuickForm;
 use Icinga\Util\Json;
 
-use GuzzleHttp\Exception\GuzzleException;
-
 class ImportSource extends ImportSourceHook
 {
     private ?array $objectCache = null;
@@ -223,7 +221,7 @@ class ImportSource extends ImportSourceHook
     private function getRecordsFromTable(): array
     {
         $columns = null;
-        $query = null;
+        $query = '';
 
         // Get requested columns
         if ($this->getSetting('servicenow_columns') !== "") {
@@ -243,7 +241,7 @@ class ImportSource extends ImportSourceHook
             'token' => $this->getSetting('servicenow_token'),
             'username' => $this->getSetting('servicenow_username'),
             'password' => $this->getSetting('servicenow_password'),
-            'token_url' => $this->getSetting('servicenow_oauth_token_url'),
+            'token_url' => $this->getSetting('servicenow_oauth_token_url'), // TODO: Currently no form input for this
             'client_id' => $this->getSetting('servicenow_oauth_client_id'),
             'client_secret' => $this->getSetting('servicenow_oauth_client_secret'),
             'scope' => $this->getSetting('servicenow_oauth_scope'),
@@ -260,10 +258,12 @@ class ImportSource extends ImportSourceHook
             $auth
         );
 
+        // TODO: Maybe use pagination here
         $resp = $client->request(
             $endpoint,
             [
                 'query' => [
+                    // Since we not only want the sys_ids but also the actual values
                     'sysparm_display_value' => 'true',
                     'sysparm_fields' => $columns,
                     'sysparm_query' => rawurldecode($query),
